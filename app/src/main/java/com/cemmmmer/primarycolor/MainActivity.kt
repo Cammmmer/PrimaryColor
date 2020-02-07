@@ -15,7 +15,7 @@ import java.lang.ref.SoftReference
 class MainActivity : AppCompatActivity() {
 
 
-    private lateinit var mTask: ImageAsyncTask
+    private var mTask: ImageAsyncTask? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,14 +25,17 @@ class MainActivity : AppCompatActivity() {
                     Intent.ACTION_PICK,
                     MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
             startActivityForResult(intent, 1)
-
         }
-        mTask = ImageAsyncTask(this)
+
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == 1 && resultCode == Activity.RESULT_OK && null != data) {
-            mTask.execute(data.data)
+            if (mTask?.status == AsyncTask.Status.RUNNING) {
+                mTask?.cancel(true)
+            }
+            mTask = ImageAsyncTask(this)
+            mTask!!.execute(data.data)
         }
         super.onActivityResult(requestCode, resultCode, data)
     }
@@ -46,15 +49,19 @@ class MainActivity : AppCompatActivity() {
 
     class ImageAsyncTask(activity: MainActivity) : AsyncTask<Uri, Void, Bitmap>() {
         private var mContext: SoftReference<MainActivity> = SoftReference(activity)
-
+        private var mPrimaryColor = PrimaryColor()
+        private var mColor: Int = 0;
 
         override fun doInBackground(vararg data: Uri?): Bitmap {
-            return MediaStore.Images.Media.getBitmap(mContext.get()?.contentResolver, data[0])
+            var bitmap: Bitmap = MediaStore.Images.Media.getBitmap(mContext.get()?.contentResolver, data[0])
+            mColor = mPrimaryColor.generate(bitmap)
+            return bitmap
         }
 
         override fun onPostExecute(bitmap: Bitmap?) {
             super.onPostExecute(bitmap)
             mContext.get()?.imageView?.setImageBitmap(bitmap)
+            mContext.get()?.colorView?.setBackgroundColor(mColor)
         }
     }
 }
