@@ -38,7 +38,7 @@ class PrimaryColor {
 
         if (bitmap != null) {
             val colorPalette = Palette.generate(bitmap, MAX_COLOR_NUMS)
-            val swatches = colorPalette.getSwatches()
+            val swatches = colorPalette.swatches
 
             if (DEBUG) {
                 startTime = System.currentTimeMillis()
@@ -67,7 +67,7 @@ class PrimaryColor {
                 initColorsSets.add(
                     BaseColor(
                         r, g, b, hsv[0], hsv[1],
-                        hsv[2], rgba, swatch.getPopulation()
+                        hsv[2], rgba, swatch.population
                     )
                 )
             }
@@ -127,9 +127,9 @@ class PrimaryColor {
 
     companion object {
 
-        private val TAG = "PrimaryColor"
+        private const  val TAG = "PrimaryColor"
 
-        private val MAX_COLOR_NUMS = 38
+        private const val MAX_COLOR_NUMS = 38
 
         private fun clamp(value: Float, min: Float, max: Float): Float {
             return if (value < min) min else if (value > max) max else value

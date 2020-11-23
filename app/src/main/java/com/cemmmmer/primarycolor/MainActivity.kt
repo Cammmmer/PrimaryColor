@@ -10,9 +10,7 @@ import android.graphics.Bitmap
 import kotlinx.coroutines.*
 
 
-class MainActivity : AppCompatActivity() {
-
-    private var mJop: Job? = null
+class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -24,28 +22,39 @@ class MainActivity : AppCompatActivity() {
             )
             startActivityForResult(intent, 1)
         }
-
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == 1 && resultCode == Activity.RESULT_OK && null != data) {
-            mJop = GlobalScope.launch(Dispatchers.Main) {
-                var bitmap: Bitmap? = null
-                var color = 0
-                withContext(Dispatchers.IO) {
-                    bitmap = MediaStore.Images.Media.getBitmap(contentResolver, data.data)
-                    color = PrimaryColor().generate(bitmap)
+            launch {
+                val result = generate(data)
+                result?.first?.let {
+                    colorView.setBackgroundColor(it)
                 }
-                imageView.setImageBitmap(bitmap)
-                colorView.setBackgroundColor(color)
+                result?.second?.let {
+                    imageView.setImageBitmap(it)
+                }
             }
         }
         super.onActivityResult(requestCode, resultCode, data)
     }
 
+    private suspend fun generate(data: Intent): Pair<Int, Bitmap?>? = withContext(Dispatchers.IO) {
+        try {
+            val bitmap: Bitmap? = MediaStore.Images.Media.getBitmap(contentResolver, data.data)
+            // Core code
+            val color = PrimaryColor().generate(bitmap)
+            return@withContext Pair(color, bitmap)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return@withContext null
+    }
+
+
     override fun onDestroy() {
         super.onDestroy()
-        mJop?.cancel()
         imageView.setImageBitmap(null)
+        cancel()
     }
 }
